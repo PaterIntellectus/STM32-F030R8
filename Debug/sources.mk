@@ -26,12 +26,12 @@ SUBDIRS := \
 Core/Src \
 Core/Startup \
 Drivers/STM32F0xx_HAL_Driver/Src \
-Libs/WIZnet/Ethernet/W5100 \
-Libs/WIZnet/Ethernet/W5100S \
-Libs/WIZnet/Ethernet/W5200 \
-Libs/WIZnet/Ethernet/W5300 \
-Libs/WIZnet/Ethernet/W5500 \
-Libs/WIZnet/Ethernet \
-Libs/WIZnet/Internet/DHCP \
-Libs/WIZnet/Internet/DNS \
+Libs/Pater\ Intellectus/WIZnet\ Extension \
+Libs/Pater\ Intellectus/WIZnet\ HTTP\ Client \
+Libs/ioLibrary_Driver/Ethernet/W5100 \
+Libs/ioLibrary_Driver/Ethernet/W5100S \
+Libs/ioLibrary_Driver/Ethernet/W5200 \
+Libs/ioLibrary_Driver/Ethernet/W5300 \
+Libs/ioLibrary_Driver/Ethernet/W5500 \
+Libs/ioLibrary_Driver/Ethernet \
 

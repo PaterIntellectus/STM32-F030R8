@@ -30,12 +30,12 @@ Core/Src/stm32f0xx_it.o: ../Core/Src/stm32f0xx_it.c ../Core/Inc/main.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/socket.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/wizchip_conf.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/W5500/w5500.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/wizchip_conf.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Internet/DHCP/dhcp.h \
- D:/Repositories/STM32-F030R8/Libs/WIZnet/Internet/DNS/dns.h \
+ D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/socket.h \
+ D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/wizchip_conf.h \
+ D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/W5500/w5500.h \
+ D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/wizchip_conf.h \
+ D:/Repositories/STM32-F030R8/Libs/Pater\ Intellectus/WIZnet\ HTTP\ Client/http_client.h \
+ D:/Repositories/STM32-F030R8/Libs/Pater\ Intellectus/WIZnet\ Extension/wiznet_extension.h \
  ../Core/Inc/stm32f0xx_it.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h:
@@ -69,10 +69,10 @@ Core/Src/stm32f0xx_it.o: ../Core/Src/stm32f0xx_it.c ../Core/Inc/main.h \
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h:
 ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/socket.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/wizchip_conf.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/W5500/w5500.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Ethernet/wizchip_conf.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Internet/DHCP/dhcp.h:
-D:/Repositories/STM32-F030R8/Libs/WIZnet/Internet/DNS/dns.h:
+D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/socket.h:
+D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/wizchip_conf.h:
+D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/W5500/w5500.h:
+D:/Repositories/STM32-F030R8/Libs/ioLibrary_Driver/Ethernet/wizchip_conf.h:
+D:/Repositories/STM32-F030R8/Libs/Pater\ Intellectus/WIZnet\ HTTP\ Client/http_client.h:
+D:/Repositories/STM32-F030R8/Libs/Pater\ Intellectus/WIZnet\ Extension/wiznet_extension.h:
 ../Core/Inc/stm32f0xx_it.h:

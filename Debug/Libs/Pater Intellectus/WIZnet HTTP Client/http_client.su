@@ -1,0 +1,4 @@
+../Libs/Pater Intellectus/WIZnet HTTP Client/http_client.c:9:9:httpc_socket	16	static
+../Libs/Pater Intellectus/WIZnet HTTP Client/http_client.c:14:9:httpc_connect	16	static
+../Libs/Pater Intellectus/WIZnet HTTP Client/http_client.c:19:9:httpc_send	2080	static
+../Libs/Pater Intellectus/WIZnet HTTP Client/http_client.c:47:9:httpc_recv	2080	static

@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file
-  *      : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file
+ *      : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2022 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -37,9 +37,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // ====================
-#define DHCP_SOCKET     0
-#define DNS_SOCKET      1
-#define HTTP_SOCKET     2
+
 // ====================
 /* USER CODE END PD */
 
@@ -60,12 +58,8 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 // ====================
-// 1K should be enough, see https://forum.wiznet.io/t/topic/1612/2
-uint8_t dhcp_buffer[1024];
-// 1K seems to be enough for this buffer as well
-uint8_t dns_buffer[1024];
-
-static volatile bool ip_assigned = false;
+const uint8_t SOCKET_NUM = 1;
+int16_t socketStatus = -1;
 
 // ====================
 /* USER CODE END PV */
@@ -79,56 +73,21 @@ static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 // ====================
-
+void Wiznet_Init(void);
+void Wiznet_Select(void);
+void Wiznet_Unselect(void);
+void Wiznet_ReadBuff(uint8_t* buff, uint16_t len);
+void Wiznet_WriteBuff(uint8_t* buff, uint16_t len);
+uint8_t Wiznet_ReadByte(void);
+void Wiznet_WriteByte(uint8_t byte);
+//void Wiznet_CrisExit_Callback(void);
+//void Wiznet_CrisEnter_Callback(void);
 // ====================
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 // ====================
-int _write(int file, char *ptr, int len)
-{
-	HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-	return len;
-}
-
-void W5500_Select(void) {
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);
-}
-
-void W5500_Unselect(void) {
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
-}
-
-void W5500_ReadBuff(uint8_t* buff, uint16_t len) {
-	HAL_SPI_Receive(&hspi2, buff, len, HAL_MAX_DELAY);
-}
-
-void W5500_WriteBuff(uint8_t* buff, uint16_t len) {
-	HAL_SPI_Transmit(&hspi2, buff, len, HAL_MAX_DELAY);
-}
-
-uint8_t W5500_ReadByte(void) {
-	uint8_t byte;
-	W5500_ReadBuff(&byte, sizeof(byte));
-	return byte;
-}
-
-void W5500_WriteByte(uint8_t byte) {
-	W5500_WriteBuff(&byte, sizeof(byte));
-}
-
-void Callback_IPAssigned(void)
-{
-    printf("Callback: IP assigned! Leased time: %d sec\r\n",
-                getDHCPLeasetime());
-    ip_assigned = true;
-}
-
-void Callback_IPConflict(void)
-{
-    printf("Callback: IP conflict!\r\n");
-}
 
 // ====================
 /* USER CODE END 0 */
@@ -140,7 +99,8 @@ void Callback_IPConflict(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	// ====================
+  // ====================
+
   // ====================
   /* USER CODE END 1 */
 
@@ -151,6 +111,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   // ====================
+
   // ====================
   /* USER CODE END Init */
 
@@ -159,6 +120,7 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
   // ====================
+
   // ====================
   /* USER CODE END SysInit */
 
@@ -170,74 +132,14 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   // ====================
+  Wiznet_Init();
 
-  printf("Registering W5500 callbacks...\r\n");
-  reg_wizchip_cs_cbfunc(W5500_Select, W5500_Unselect);
-  reg_wizchip_spi_cbfunc(W5500_ReadByte, W5500_WriteByte);
-  reg_wizchip_spiburst_cbfunc(W5500_ReadBuff, W5500_WriteBuff);
-
-
-  printf("Calling wizchip_init()...\r\n");
-  uint8_t rx_tx_buff_sizes[] = {2, 2, 2, 2, 2, 2, 2, 2};
-  wizchip_init(rx_tx_buff_sizes, rx_tx_buff_sizes);
-
-
-  printf("Calling DHCP_init()...\r\n");
-  wiz_NetInfo net_info = {
-      .mac  = { 0xEA, 0x11, 0x22, 0x33, 0x44, 0xEA },
-      .dhcp = NETINFO_DHCP
-  };
-
-
-  printf("Registering DHCP callbacks...\r\n");
-  reg_dhcp_cbfunc(
-  		Callback_IPAssigned,
-      Callback_IPAssigned,
-      Callback_IPConflict
-  );
-
-
-  printf("Calling DHCP_run()...\r\n");
-  // actually should be called in a loop, e.g. by timer
-  uint32_t ctr = 10000;
-  while((!ip_assigned) && (ctr > 0)) {
-    printf("dchp started\r\n");
-		DHCP_run();
-		ctr--;
-		printf("dchp finished\r\n");
-  }
-  if(!ip_assigned) {
-		printf("\r\nIP was not assigned :(\r\n");
-		return 1;
-  }
-
-
-  getIPfromDHCP(net_info.ip);
-  getGWfromDHCP(net_info.gw);
-  getSNfromDHCP(net_info.sn);
-
-  uint8_t dns[4];
-  getDNSfromDHCP(dns);
-
-  printf(
-  		"IP:  %d.%d.%d.%d\r\n"
-      "GW:  %d.%d.%d.%d\r\n"
-      "Net: %d.%d.%d.%d\r\n"
-      "DNS: %d.%d.%d.%d\r\n",
-      net_info.ip[0], net_info.ip[1], net_info.ip[2], net_info.ip[3],
-      net_info.gw[0], net_info.gw[1], net_info.gw[2], net_info.gw[3],
-      net_info.sn[0], net_info.sn[1], net_info.sn[2], net_info.sn[3],
-      dns[0], dns[1], dns[2], dns[3]
-  );
-
-  printf("Calling wizchip_setnetinfo()...\r\n");
-  wizchip_setnetinfo(&net_info);
-
-  // set MAC address before using DHCP
-  setSHAR(net_info.mac);
-  DHCP_init(DHCP_SOCKET, dhcp_buffer);
-
-
+  // Timers
+  __HAL_TIM_CLEAR_FLAG(&htim1, TIM_SR_UIF);
+  HAL_TIM_Base_Start_IT(&htim1);
+  //  __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
+  //  HAL_TIM_Base_Start_IT(&htim3);
+  // ~Timers
 
   // ====================
   /* USER CODE END 2 */
@@ -245,19 +147,113 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   // ====================
-  // очистка флага (благодаря этому таймер не сработает сразу после включения)
-  __HAL_TIM_CLEAR_FLAG(&htim1, TIM_SR_UIF);
-  HAL_TIM_Base_Start_IT(&htim1);
-  __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
-  HAL_TIM_Base_Start_IT(&htim3);
 
   while (1)
   {
-  	// ====================
+    // CLIENT
+    printf("Opening a socket #%d\r\n", SOCKET_NUM);
+    socketStatus = socket(SOCKET_NUM, Sn_MR_TCP, 818, Sn_MR_ND);
+    if (socketStatus != SOCKET_NUM) {
+      printf("Opening of a socket #%d, failed with code: %d\r\n",
+             SOCKET_NUM, socketStatus);
+  //      continue;
+    } else {
+      printf("Socket #%d successfully opened!\r\n",
+             SOCKET_NUM);
+    }
+    HAL_Delay(1000);
+
+
+    socketStatus = httpc_connect(SOCKET_NUM);
+    if (SOCK_OK != socketStatus) {
+      printf("Cannot connect to the server. Code: %d\r\n",
+             socketStatus);
+    } else {
+      printf("Connected to: %d.%d.%d.%d:%d\r\n",
+             SERVER_IP[0], SERVER_IP[1], SERVER_IP[2], SERVER_IP[3], SERVER_PORT);
+    }
+    HAL_Delay(1000);
+
+
+    Request request = {
+        GET,
+        (uint8_t*)"/?page=getcmd&id=6&val=0&st=0",
+        (uint8_t*)"192.168.1.23:80"
+    };
+    socketStatus = httpc_send(SOCKET_NUM, &request);
+    if (socketStatus <= 0) {
+      printf("send() failed. Code: %d\r\n", socketStatus);
+    } else {
+      printf("Request successfully sent. Len: %d\r\n", socketStatus);
+    }
+    HAL_Delay(1000);
+
+    socketStatus = httpc_recv(SOCKET_NUM);
+    if (socketStatus <= 0) {
+      printf("recv() failed. Code: %d\r\n", socketStatus);
+    } else {
+      printf("Reply processed.\r\n");
+    }
+    HAL_Delay(1000);
+
+    printf("Disconnecting socket #%d\r\n", SOCKET_NUM);
+    disconnect(SOCKET_NUM);
+
+    printf("Closing socket #%d\r\n", SOCKET_NUM);
+    close(SOCKET_NUM);
+
+    HAL_Delay(1000);
+
+//     SERVER
+//    printf("Opening a socket #%d\r\n", SOCKET_NUM);
+//    socketStatus = socket(SOCKET_NUM, Sn_MR_TCP, 80, 0);
+//    if (socketStatus != SOCKET_NUM) {
+//      printf("Opening of socket #%d, failed with code: %d\r\n", SOCKET_NUM, socketStatus);
+//  //      continue;
+//    }
+//    printf("Socket #%d successfully opened!\r\n", SOCKET_NUM);
+//
+//    socketStatus = listen(SOCKET_NUM);
+//    if (socketStatus !=  SOCK_OK) {
+//      printf("Can't listen a socket. Code: %d\r\n", socketStatus);
+////      continue;
+//    }
+//    printf("Listing to socket #%d\r\n", SOCKET_NUM);
+//
+//    while (getSn_SR(SOCKET_NUM) == SOCK_LISTEN);
+//
+//    printf("Input connection\r\n");
+//    if (getSn_SR(SOCKET_NUM) != SOCK_ESTABLISHED) {
+//      printf("Socket listing error: %d\r\n", socketStatus);
+//    }
+//
+//    uint8_t rIP[4];
+//    getsockopt(SOCKET_NUM, SO_DESTIP, rIP);
+//    printf("Listening to: %d.%d.%d.%d\r\n", rIP[0], rIP[1], rIP[2], rIP[3]);
+//
+//    sprintf(message, "Input counter = %d", iterator);
+//
+//    socketStatus = send(SOCKET_NUM, (uint8_t*)message, strlen(message));
+//    if (socketStatus != strlen(message)) {
+//      printf("Cannot send data! Code:%d\r\n", socketStatus);
+//    }
+//
+//    disconnect(SOCKET_NUM);
+//
+////    printf("Closing socket\r\n");
+////    close(SOCKET_NUM);
+//
+//    HAL_Delay(1000);
+//    ++iterator;
+//
+//     ~SERVER
+
+    // ====================
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  	// ====================
+    // ====================
+//    HAL_Delay(1000);
   }
   // ====================
   /* USER CODE END 3 */
@@ -327,7 +323,7 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
@@ -357,9 +353,9 @@ static void MX_TIM1_Init(void)
 {
 
   /* USER CODE BEGIN TIM1_Init 0 */
-	// ====================
+  // ====================
 
-	// ====================
+  // ====================
   /* USER CODE END TIM1_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
@@ -454,15 +450,15 @@ static void MX_USART1_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART1_Init 0 */
-	// ====================
+  // ====================
 
-	// ====================
+  // ====================
   /* USER CODE END USART1_Init 0 */
 
   /* USER CODE BEGIN USART1_Init 1 */
-	// ====================
+  // ====================
 
-	// ====================
+  // ====================
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
@@ -516,18 +512,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(UserBtn_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED1_Pin SPI2_RST_Pin */
-  GPIO_InitStruct.Pin = LED1_Pin|SPI2_RST_Pin;
+  /*Configure GPIO pin : LED1_Pin */
+  GPIO_InitStruct.Pin = LED1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(LED1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI2_CS_Pin */
   GPIO_InitStruct.Pin = SPI2_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(SPI2_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED2_Pin */
@@ -543,6 +539,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SPI2_INT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SPI2_RST_Pin */
+  GPIO_InitStruct.Pin = SPI2_RST_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(SPI2_RST_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
@@ -551,31 +554,116 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 // ====================
+// �?нициализация настроек устройства
+void Wiznet_Init(void)
+{
+  // hard reset
+  HAL_GPIO_WritePin(SPI2_RST_GPIO_Port, SPI2_RST_Pin, GPIO_PIN_RESET);
+  HAL_Delay(70);
+  HAL_GPIO_WritePin(SPI2_RST_GPIO_Port, SPI2_RST_Pin, GPIO_PIN_SET);
+  HAL_Delay(70);
+
+  // регистрация функций
+  reg_wizchip_cs_cbfunc(Wiznet_Select, Wiznet_Unselect);
+  reg_wizchip_spi_cbfunc(Wiznet_ReadByte, Wiznet_WriteByte);
+  reg_wizchip_spiburst_cbfunc(Wiznet_ReadBuff, Wiznet_WriteBuff);
+  //  reg_wizchip_cris_cbfunc(Wiznet_CrisEnter_Callback, Wiznet_CrisExit_Callback);
+
+  // инициализация размеров буферов для сокетов
+  uint8_t rx_tx_buff_sizes[2][8] = {
+      { 2, 2, 2, 2, 2, 2, 2, 2, }, { 2, 2, 2, 2, 2, 2, 2, 2, }
+  };
+  ctlwizchip(CW_INIT_WIZCHIP, rx_tx_buff_sizes);
+
+  // инициализация параметров сети
+  wiz_NetInfo netInfo = {
+      .mac  = { 0xD4, 0x3D, 0x7E, 0x50, 0xAB, 0x0F },
+      .ip   = { 192, 168, 1, 123 },
+      .sn   = { 255, 255, 255, 0 },
+      .gw   = { 192, 168, 1, 23 },
+//      .dns  = { 192, 168, 1, 1 },
+      .dhcp = NETINFO_STATIC
+  };
+  ctlnetwork(CN_SET_NETINFO, (void*)&netInfo);
+  printNetworkInfo();
+}
+void Wiznet_Select(void)
+{
+  HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);
+//  printf("Wiznet_Select(void)\r\n");
+}
+void Wiznet_Unselect(void)
+{
+  HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
+//  printf("Wiznet_Unselect(void)\r\n");
+}
+void Wiznet_ReadBuff(uint8_t* buff, uint16_t len)
+{
+  HAL_SPI_Receive(&hspi2, buff, len, HAL_MAX_DELAY);
+//  printf("Wiznet_ReadBuff(uint8_t* buff = %d, uint16_t len = %d)\r\n", *buff, len);
+}
+void Wiznet_WriteBuff(uint8_t* buff, uint16_t len)
+{
+//  printf("Wiznet_WriteBuff(uint8_t* buff = %d, uint16_t len = %d)\r\n", *buff, len);
+  HAL_SPI_Transmit(&hspi2, buff, len, HAL_MAX_DELAY);
+}
+uint8_t Wiznet_ReadByte(void)
+{
+  uint8_t byte;
+  Wiznet_ReadBuff(&byte, sizeof(byte));
+//  printf("Wiznet_ReadByte(void)  byte = %d\r\n", byte);
+  return byte;
+}
+void Wiznet_WriteByte(uint8_t byte)
+{
+//  printf("Wiznet_WriteByte(uint8_t byte = %d)\r\n", byte);
+  Wiznet_WriteBuff(&byte, sizeof(byte));
+}
+
+//void Wiznet_CrisEnter_Callback(void)
+//{
+//  printf("Wiznet_CrisEnter_Callback\r\n");
+//}
+
+//void Wiznet_CrisExit_Callback(void)
+//{
+//  printf("Wiznet_CrisExit_Callback\r\n");
+//}
+
+// перенаправление printf в Uart
+int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+  return len;
+}
+
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	printf("EXTI_pin = %d\r\n", GPIO_Pin);
-	if (GPIO_Pin == UserBtn_Pin) {
-		HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-	} else if (GPIO_Pin == SPI2_INT_Pin) {
-		printf("Got LAN module's interrupt");
-	}
+  printf("EXTI_pin = %d\r\n", GPIO_Pin);
+  if (GPIO_Pin == UserBtn_Pin) {
+    HAL_GPIO_TogglePin(SPI2_RST_GPIO_Port, SPI2_RST_Pin);
+//    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+  } else if (GPIO_Pin == SPI2_INT_Pin) {
+    printf("Got LAN module's interrupt\r\n");
+  }
 
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if(htim->Instance == TIM1) {
-		static uint32_t seconds = 0;
-		++seconds;
-		printf("%02d:%02d:%02d\r\n",
-		       seconds / 60 / 60,
-		       seconds / 60,
-		       seconds % 60
-		       );
-		HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-	} else if (htim->Instance == TIM3 && !ip_assigned) {
-//		DHCP_run();
-	}
+  if(htim->Instance == TIM1) {
+    static uint32_t seconds = 0;
+    ++seconds;
+//    printf("%02d:%02d:%02d\r\n",
+//           seconds / 60 / 60,
+//           seconds / 60,
+//           seconds % 60
+//           );
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+  } else if (htim->Instance) {
+
+  }
 }
 
 // ====================
@@ -588,11 +676,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	// ====================
+  // ====================
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+    HAL_Delay(200);
   }
   // ====================
   /* USER CODE END Error_Handler_Debug */
@@ -609,11 +699,11 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-	// ====================
+  // ====================
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
-	// ====================
+  // ====================
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

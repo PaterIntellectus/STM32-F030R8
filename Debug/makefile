@@ -9,14 +9,14 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include Libs/WIZnet/Internet/DNS/subdir.mk
--include Libs/WIZnet/Internet/DHCP/subdir.mk
--include Libs/WIZnet/Ethernet/W5500/subdir.mk
--include Libs/WIZnet/Ethernet/W5300/subdir.mk
--include Libs/WIZnet/Ethernet/W5200/subdir.mk
--include Libs/WIZnet/Ethernet/W5100S/subdir.mk
--include Libs/WIZnet/Ethernet/W5100/subdir.mk
--include Libs/WIZnet/Ethernet/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/W5500/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/W5300/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/W5200/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/W5100S/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/W5100/subdir.mk
+-include Libs/ioLibrary_Driver/Ethernet/subdir.mk
+-include Libs/Pater\ Intellectus/WIZnet\ HTTP\ Client/subdir.mk
+-include Libs/Pater\ Intellectus/WIZnet\ Extension/subdir.mk
 -include Drivers/STM32F0xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
